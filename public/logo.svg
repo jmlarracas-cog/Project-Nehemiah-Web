@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 650" width="100%" height="100%" aria-label="Church of God – Subic official logo">
+  <defs>
+    <!-- Metallic Gold Gradient -->
+    <linearGradient id="goldMetallic" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE885"/>
+      <stop offset="25%" stop-color="#DAA520"/>
+      <stop offset="50%" stop-color="#FFD700"/>
+      <stop offset="75%" stop-color="#B8860B"/>
+      <stop offset="100%" stop-color="#F3E5AB"/>
+    </linearGradient>
+
+    <!-- Ring Multi-Tone Metallic Gradient -->
+    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2c3e50"/>
+      <stop offset="20%" stop-color="#1a252f"/>
+      <stop offset="40%" stop-color="#b8860b"/>
+      <stop offset="65%" stop-color="#d32f2f"/>
+      <stop offset="85%" stop-color="#b71c1c"/>
+      <stop offset="100%" stop-color="#f57f17"/>
+    </linearGradient>
+
+    <!-- Flame Metallic Gradient -->
+    <linearGradient id="flameGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d32f2f"/>
+      <stop offset="40%" stop-color="#f57c00"/>
+      <stop offset="70%" stop-color="#ffb300"/>
+      <stop offset="100%" stop-color="#ffee58"/>
+    </linearGradient>
+
+    <!-- Cross Metallic Gradient -->
+    <linearGradient id="crossGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff59d"/>
+      <stop offset="35%" stop-color="#f57f17"/>
+      <stop offset="70%" stop-color="#b8860b"/>
+      <stop offset="100%" stop-color="#5d4037"/>
+    </linearGradient>
+
+    <!-- Splatter Rainbow Edge Halo Gradient -->
+    <radialGradient id="haloGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#121820"/>
+      <stop offset="75%" stop-color="#181024"/>
+      <stop offset="90%" stop-color="#4a148c" stop-opacity="0.8"/>
+      <stop offset="96%" stop-color="#b71c1c" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#f57f17" stop-opacity="0.6"/>
+    </radialGradient>
+
+    <!-- Text Red Shadow -->
+    <linearGradient id="redTextGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#ffffff"/>
+      <stop offset="70%" stop-color="#ffcdd2"/>
+      <stop offset="100%" stop-color="#b71c1c"/>
+    </linearGradient>
+
+    <filter id="shadowEffect" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <g transform="translate(0, 10)">
+    <!-- 1. MAIN METALLIC RING ARC -->
+    <path d="M 230 460 C 130 440 70 340 85 240 C 100 140 180 75 270 85 C 320 90 360 115 390 150 C 370 130 330 110 275 110 C 195 110 125 170 115 250 C 105 330 160 410 245 425 C 315 435 380 395 415 335 C 418 350 410 375 390 405 C 350 445 290 465 230 460 Z" fill="url(#ringGradient)" filter="url(#shadowEffect)"/>
+
+    <!-- 2. GOLD CROSS AT TOP -->
+    <g id="official-cross" filter="url(#shadowEffect)">
+      <path d="M 252 45 L 282 45 L 282 230 L 252 230 Z" fill="url(#crossGradient)"/>
+      <path d="M 200 130 L 334 130 L 334 152 L 200 152 Z" fill="url(#crossGradient)"/>
+      <path d="M 267 45 L 282 45 L 282 230 L 267 230 Z" fill="#ffffff" opacity="0.25"/>
+      <path d="M 200 141 L 334 141 L 334 152 L 200 152 Z" fill="#000000" opacity="0.2"/>
+    </g>
+
+    <!-- 3. FLAME SYMBOL AT TOP RIGHT -->
+    <g id="official-flame" filter="url(#shadowEffect)">
+      <path d="M 355 185 C 350 140 370 90 455 40 C 425 80 415 115 425 150 C 435 185 450 180 430 220 C 415 250 380 260 365 220 C 355 195 358 190 355 185 Z" fill="url(#flameGradient)"/>
+      <path d="M 370 170 C 365 145 380 110 435 70 C 415 100 405 125 415 150 C 420 165 410 180 395 180 C 380 180 372 175 370 170 Z" fill="#fff59d" opacity="0.5"/>
+    </g>
+
+    <!-- 4. CENTER BRUSHED SPLATTER BACKDROP -->
+    <g id="splatter-backdrop" filter="url(#shadowEffect)">
+      <path d="M 220 180 Q 320 160 410 200 Q 480 260 450 330 Q 400 400 300 390 Q 200 380 170 310 Q 150 240 220 180 Z" fill="url(#haloGradient)"/>
+      <path d="M 235 188 C 280 175 340 168 395 182 C 430 191 465 210 472 235 C 480 260 460 288 470 312 C 478 330 465 350 445 365 C 415 388 360 396 315 392 C 270 388 220 398 185 375 C 160 358 152 332 155 305 C 158 278 145 255 160 230 C 178 200 205 195 235 188 Z" fill="#121820"/>
+      <path d="M 210 280 C 260 280 330 270 390 285 C 440 298 450 330 420 360 C 380 390 280 395 215 370 C 170 350 175 300 210 280 Z" fill="#801010" opacity="0.85"/>
+      <path d="M 200 310 Q 300 290 410 320 Q 430 350 380 375 Q 260 390 190 350 Z" fill="#b71c1c" opacity="0.9"/>
+    </g>
+
+    <!-- 5. CENTER SCRIPT ARTWORK "We Exalt You" -->
+    <g id="we-exalt-you-text" filter="url(#shadowEffect)">
+      <text x="310" y="245" font-family="'Brush Script MT', 'Dancing Script', 'Georgia', cursive" font-size="38" font-weight="bold" font-style="italic" fill="#ffffff" text-anchor="middle" letter-spacing="1">
+        We Exalt You
+      </text>
+    </g>
+
+    <!-- 6. CENTER BOLD ARTWORK "Jesus!" -->
+    <g id="jesus-text" filter="url(#shadowEffect)">
+      <text x="325" y="335" font-family="'Impact', 'Arial Black', sans-serif" font-size="88" font-weight="900" fill="url(#redTextGradient)" text-anchor="middle" letter-spacing="-1">
+        Jesus!
+      </text>
+      <path d="M 220 352 Q 310 332 430 338 L 415 348 Q 310 342 220 358 Z" fill="#d32f2f"/>
+    </g>
+
+    <!-- 7. BOTTOM MOTTO "GATHER THE HARVEST" -->
+    <g id="gather-harvest-text" filter="url(#shadowEffect)">
+      <text x="300" y="495" font-family="'Montserrat', 'Cinzel', sans-serif" font-size="25" font-weight="900" fill="url(#goldMetallic)" text-anchor="middle" letter-spacing="7">
+        GATHER THE HARVEST
+      </text>
+    </g>
+  </g>
+</svg>

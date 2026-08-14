@@ -1,0 +1,6 @@
+{
+  "name": "Church of God – Subic",
+  "description": "Official digital ministry platform for Church of God – Subic (Gather the Harvest). Featuring live sermon archives, ministries, event calendar, multi-location directory, and prayer request submission.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

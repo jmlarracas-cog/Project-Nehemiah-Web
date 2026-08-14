@@ -1,0 +1,325 @@
+rules_version = '2';
+
+/**
+ * Project Nehemiah — Production Firestore Security Rules
+ * 
+ * SECURITY AUTHORITY ARCHITECTURE:
+ * 1. Client ID Token Custom Claim `request.auth.token.role` is the ONLY authoritative source for role permissions.
+ * 2. Firestore user documents (`users/{uid}.role`) are profile metadata ONLY and NEVER grant authorization.
+ * 3. Client-side PermissionGates / Repository Guards are UI safety features; these rules enforce actual database security.
+ * 4. Strictly enforces privacy separation between Prayer Requests (SUPER_ADMIN, PRAYER_ADMIN) and Contact Inquiries (SUPER_ADMIN, ADMIN).
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===================================
+    // SECURITY HELPER FUNCTIONS
+    // ===================================
+
+    // Returns true if the request originates from an authenticated Firebase user.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Extracts the user's role from their server-issued Firebase ID Token custom claims.
+    // Defaults to 'NONE' if unauthenticated, missing, malformed, or unrecognized.
+    function getUserRole() {
+      return isSignedIn()
+        && ('role' in request.auth.token)
+        && (request.auth.token.role is string)
+        && request.auth.token.role in [
+          'SUPER_ADMIN',
+          'ADMIN',
+          'EDITOR',
+          'MEDIA_ADMIN',
+          'PRAYER_ADMIN',
+          'MINISTRY_EDITOR',
+          'READ_ONLY'
+        ]
+          ? request.auth.token.role
+          : 'NONE';
+    }
+
+    // Evaluates whether the user's custom claim role matches a target canonical role.
+    function hasRole(targetRole) {
+      return getUserRole() == targetRole;
+    }
+
+    // Evaluates whether the user's custom claim role matches any of the allowed roles.
+    function hasAnyRole(allowedRoles) {
+      return getUserRole() in allowedRoles;
+    }
+
+    // Role-specific evaluation helpers
+    function isSuperAdmin() {
+      return hasRole('SUPER_ADMIN');
+    }
+
+    function isAdmin() {
+      return hasRole('ADMIN');
+    }
+
+    function isEditor() {
+      return hasRole('EDITOR');
+    }
+
+    function isMediaAdmin() {
+      return hasRole('MEDIA_ADMIN');
+    }
+
+    function isPrayerAdmin() {
+      return hasRole('PRAYER_ADMIN');
+    }
+
+    function isMinistryEditor() {
+      return hasRole('MINISTRY_EDITOR');
+    }
+
+    function isCmsAdmin() {
+      return hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'EDITOR']);
+    }
+
+    function isValidRole() {
+      return getUserRole() in [
+        'SUPER_ADMIN',
+        'ADMIN',
+        'EDITOR',
+        'MEDIA_ADMIN',
+        'PRAYER_ADMIN',
+        'MINISTRY_EDITOR',
+        'READ_ONLY'
+      ];
+    }
+
+    // Check if document is published
+    function isPublished() {
+      return resource != null && resource.data.status == 'published';
+    }
+
+    // ===================================
+    // PUBLIC CMS COLLECTIONS (With Status)
+    // ===================================
+
+    // Sermons Collection
+    match /sermons/{sermonId} {
+      allow read: if isPublished() || isCmsAdmin() || isMediaAdmin();
+      allow create, update: if isSuperAdmin() || isAdmin() || isEditor() || isMediaAdmin();
+      allow delete: if isSuperAdmin() || isAdmin();
+    }
+
+    // Events Collection
+    match /events/{eventId} {
+      allow read: if isPublished() || isCmsAdmin();
+      allow create, update: if isSuperAdmin() || isAdmin() || isEditor();
+      allow delete: if isSuperAdmin() || isAdmin();
+    }
+
+    // Ministries Collection
+    match /ministries/{ministryId} {
+      allow read: if isPublished() || isCmsAdmin() || isMinistryEditor();
+      allow create, update: if isSuperAdmin() || isAdmin() || isEditor() || isMinistryEditor();
+      allow delete: if isSuperAdmin() || isAdmin();
+    }
+
+    // Churches / Campuses Collection
+    match /churches/{churchId} {
+      allow read: if isPublished() || isCmsAdmin();
+      allow create, update: if isSuperAdmin() || isAdmin() || isEditor();
+      allow delete: if isSuperAdmin() || isAdmin();
+    }
+
+    // Leadership Collection
+    match /leaders/{leaderId} {
+      allow read: if isPublished() || isCmsAdmin();
+      allow create, update: if isSuperAdmin() || isAdmin() || isEditor();
+      allow delete: if isSuperAdmin() || isAdmin();
+    }
+
+    // Pages Collection
+    match /pages/{slug} {
+      allow read: if isPublished() || isCmsAdmin();
+      allow create, update: if isSuperAdmin() || isAdmin() || isEditor();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Media Assets Metadata
+    match /media/{mediaId} {
+      allow read: if isPublished() || isCmsAdmin() || isMediaAdmin();
+
+      // Creation: Authorized media roles can create media records.
+      // Non-super-admins cannot set isOfficialBrandAsset == true during creation.
+      allow create: if (isSuperAdmin() || isAdmin() || isEditor() || isMediaAdmin())
+        && (!('isOfficialBrandAsset' in request.resource.data) || request.resource.data.isOfficialBrandAsset == false || isSuperAdmin());
+
+      // Updates: Authorized media roles can update media records.
+      // Official brand assets (isOfficialBrandAsset == true) are strictly protected:
+      // - Non-super-admin cannot modify the isOfficialBrandAsset flag.
+      // - Cannot change isOfficialBrandAsset from true to false.
+      // - Cannot archive official brand assets (status != 'archived').
+      // - Cannot change official brand asset url or assetType.
+      allow update: if (isSuperAdmin() || isAdmin() || isEditor() || isMediaAdmin())
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isOfficialBrandAsset']) || isSuperAdmin())
+        && (
+          resource.data.isOfficialBrandAsset != true || (
+            request.resource.data.isOfficialBrandAsset == true
+            && request.resource.data.status != 'archived'
+            && request.resource.data.url == resource.data.url
+            && request.resource.data.assetType == resource.data.assetType
+          )
+        );
+
+      // Deletion: Official brand assets CANNOT be deleted via client SDKs.
+      // Non-official brand assets can be deleted by SUPER_ADMIN or ADMIN.
+      allow delete: if (isSuperAdmin() || isAdmin())
+        && resource.data.isOfficialBrandAsset != true;
+    }
+
+    // ===================================
+    // PUBLIC CONFIGURATION COLLECTIONS
+    // ===================================
+
+    // Site Settings Collection (e.g. site_settings/global)
+    match /site_settings/{docId} {
+      allow read: if true;
+      allow create, update: if isSuperAdmin() || isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Navigation Items
+    match /navigation/{navId} {
+      allow read: if (resource != null && resource.data.status == 'published') || isCmsAdmin();
+      allow create, update: if isSuperAdmin() || isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Series, Statistics, Social Links Configuration
+    match /sermon_series/{seriesId} {
+      allow read: if true;
+      allow write: if isCmsAdmin() || isMediaAdmin();
+    }
+
+    match /statistics/{statId} {
+      allow read: if true;
+      allow write: if isCmsAdmin();
+    }
+
+    match /social_links/{linkId} {
+      allow read: if true;
+      allow write: if isSuperAdmin() || isAdmin();
+    }
+
+    // ===================================
+    // STRICTLY PRIVATE DOMAIN 1: PRAYER
+    // ===================================
+
+    // Prayer Requests Collection
+    match /prayer_requests/{requestId} {
+      // Administrative Read & Update: SUPER_ADMIN and PRAYER_ADMIN ONLY.
+      // ADMIN is explicitly DENIED access to maintain prayer request privacy.
+      allow read, update: if isSuperAdmin() || isPrayerAdmin();
+      allow delete: if isSuperAdmin();
+
+      // Public Unauthenticated Creation with Strict Schema & Length Validation
+      allow create: if request.resource.data.keys().hasOnly([
+          'name', 'email', 'phone', 'request', 'category', 'isAnonymous',
+          'visibility', 'contactPreference', 'consent', 'submittedAt', 'createdAt', 'status', 'referenceId'
+        ])
+        && request.resource.data.keys().hasAll([
+          'request', 'category', 'isAnonymous', 'visibility', 'consent'
+        ])
+        && request.resource.data.request is string
+        && request.resource.data.request.size() >= 10
+        && request.resource.data.request.size() <= 3000
+        && request.resource.data.category is string
+        && request.resource.data.category.size() <= 50
+        && request.resource.data.isAnonymous is bool
+        && request.resource.data.visibility in ['private', 'prayer_team', 'public_consent']
+        && request.resource.data.consent is bool
+        && request.resource.data.consent == true
+        && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() <= 100))
+        && (!('email' in request.resource.data) || (request.resource.data.email is string && request.resource.data.email.size() <= 150))
+        && (!('phone' in request.resource.data) || (request.resource.data.phone is string && request.resource.data.phone.size() <= 50))
+        && (!('contactPreference' in request.resource.data) || request.resource.data.contactPreference in ['none', 'email', 'phone'])
+        && (!('status' in request.resource.data) || request.resource.data.status in ['new', 'submitted', 'pending_review', 'praying', 'followed_up', 'archived']);
+    }
+
+    // ===================================
+    // STRICTLY PRIVATE DOMAIN 2: CONTACT
+    // ===================================
+
+    // Contact Inquiries Collection
+    match /contact_inquiries/{inquiryId} {
+      // Administrative Read & Update: SUPER_ADMIN and ADMIN ONLY.
+      // PRAYER_ADMIN is explicitly DENIED access to contact inquiries.
+      allow read, update: if isSuperAdmin() || isAdmin();
+      allow delete: if isSuperAdmin();
+
+      // Public Unauthenticated Creation with Strict Schema & Length Validation
+      allow create: if request.resource.data.keys().hasOnly([
+          'name', 'email', 'phone', 'topic', 'message', 'consent', 'createdAt', 'status', 'referenceId'
+        ])
+        && request.resource.data.keys().hasAll([
+          'name', 'email', 'topic', 'message', 'consent'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 0
+        && request.resource.data.email.size() <= 150
+        && request.resource.data.topic is string
+        && request.resource.data.topic.size() <= 100
+        && request.resource.data.message is string
+        && request.resource.data.message.size() >= 10
+        && request.resource.data.message.size() <= 2000
+        && request.resource.data.consent is bool
+        && request.resource.data.consent == true
+        && (!('phone' in request.resource.data) || (request.resource.data.phone is string && request.resource.data.phone.size() <= 50))
+        && (!('status' in request.resource.data) || request.resource.data.status in ['new', 'submitted', 'received']);
+    }
+
+    // ===================================
+    // ADMINISTRATIVE & SYSTEM COLLECTIONS
+    // ===================================
+
+    // User Accounts Collection (users/{uid})
+    match /users/{uid} {
+      // A user can read their own profile document, or admins can read user records
+      allow read: if isSuperAdmin() || isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      allow create: if isSuperAdmin();
+      
+      // Self-update is allowed ONLY if the client does NOT attempt to modify security fields
+      allow update: if isSuperAdmin() || (
+        isSignedIn()
+        && request.auth.uid == uid
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'role', 'permissions', 'claims', 'isAdmin', 'isSuperAdmin'
+        ])
+      );
+      
+      allow delete: if isSuperAdmin();
+    }
+
+    // Governance Approval Queue
+    match /governance_queue/{itemId} {
+      allow read, create, update: if isCmsAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Audit Logs
+    match /audit_logs/{logId} {
+      // Audit logs are read-only for administrators and CANNOT be written to by browser clients directly.
+      // Writes are strictly reserved for trusted backend server environments using the Firebase Admin SDK.
+      allow read: if isSuperAdmin() || isAdmin();
+      allow write: if false;
+    }
+
+    // ===================================
+    // FAIL-CLOSED DEFAULT CATCH-ALL
+    // ===================================
+    match /{document=**} {
+      allow read, write: false;
+    }
+  }
+}

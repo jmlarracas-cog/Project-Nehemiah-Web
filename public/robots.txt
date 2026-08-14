@@ -1,0 +1,8 @@
+# Project Nehemiah — Church of God Subic Digital Ministry Platform
+# Leadership Preview / Pre-Launch Indexing Safeguard
+
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Disallow: /prayer
+Disallow: /contact
