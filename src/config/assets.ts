@@ -101,7 +101,7 @@ export const assetMap: Record<string, ImageAsset> = {
   },
   churchCastillejos: {
     id: 'church-castillejos',
-    url: 'https://images.unsplash.com/photo-1510519138161-58446232831c?auto=format&fit=crop&q=80&w=800',
+    url: 'https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&fit=crop&q=80&w=800',
     alt: 'Church of God Castillejos location',
     title: 'Castillejos Location',
     category: 'church',
